@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>性能测试对比报告</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-width: 320px;
+            background-color: #f5f5f5;
+        }
+        .page-container {
+            width: 70%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            min-height: 100vh;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 22px;
+            font-weight: normal;
+        }
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            background-color: white;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 1200px;
+            background-color: white;
+            table-layout: fixed;
+            border: 1px solid #d9d9d9;
+            line-height: 1.2;
+        }
+        th, td {
+            border: 1px solid #d9d9d9;
+            padding: 6px 4px;
+            text-align: center;
+            white-space: nowrap;
+            font-size: 13px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        td {
+            min-width: unset;
+            background-color: white;
+            height: 18px;
+        }
+        td.interface-name {
+            min-width: 180px;
+            max-width: 300px;
+            white-space: normal;
+            word-break: break-word;
+            background-color: white;
+            width: 20%;
+            padding: 4px 8px;
+        }
+        td:nth-child(2),
+        td:nth-child(3),
+        td:nth-child(5),
+        td:nth-child(6),
+        td:nth-child(8),
+        td:nth-child(9) {
+            min-width: 80px;
+            width: 8%;
+        }
+        td:nth-child(4),
+        td:nth-child(7),
+        td:nth-child(10) {
+            min-width: 90px;
+            width: 9%;
+        }
+        th {
+            background-color: #e6f0ff;
+            font-weight: normal;
+            cursor: pointer;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            color: #333;
+            padding: 6px 4px;
+            height: 20px;
+        }
+        th:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            background-color: #e6f0ff;
+        }
+        td:first-child {
+            position: sticky;
+            left: 0;
+            background-color: white;
+            z-index: 1;
+        }
+        tr:nth-child(even) td {
+            background-color: #f9fcff;
+        }
+        tr:hover td {
+            background-color: #f5f5f5;
+        }
+        tr:hover td:first-child {
+            background-color: #f5f5f5;
+        }
+        th.sortable:hover {
+            background-color: #e6f3ff;
+        }
+        th.sortable::after {
+            content: "↕";
+            margin-left: 5px;
+            color: #999;
+        }
+        th.asc::after {
+            content: "↑";
+            color: #333;
+        }
+        th.desc::after {
+            content: "↓";
+            color: #333;
+        }
+        .section-header {
+            background-color: #e6f0ff;
+            font-weight: bold !important;
+            cursor: default;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            border-bottom: 1px solid #d9d9d9;
+            height: 20px;
+            padding: 4px 2px;
+        }
+        .section-header:hover {
+            background-color: #e6f0ff;
+        }
+        .positive {
+            color: #52c41a;
+        }
+        .negative {
+            color: #ff4d4f;
+        }
+        .trend-up::before {
+            content: "▲";
+            margin-right: 2px;
+            font-size: 10px;
+        }
+        .trend-down::before {
+            content: "▼";
+            margin-right: 2px;
+            font-size: 10px;
+        }
+        .interface-name {
+            text-align: left;
+            padding-left: 10px;
+        }
+        
+        /* Total行样式 */
+        tr.total-row td {
+            background-color: #fafafa;
+            font-weight: bold;
+        }
+        tr.total-row:hover td {
+            background-color: #f5f5f5;
+        }
+
+        /* 第一列标题（接口名称）的样式 */
+        th[rowspan="2"] {
+            font-weight: bold !important;
+        }
+
+        /* 第二行标题（上期值、本期值、对比结果）的样式 */
+        tr:nth-child(2) th {
+            font-weight: bold !important;
+            height: 18px;
+            padding: 4px 2px;
+        }
+
+        th:not([colspan]):not([rowspan]) {
+            width: 8.33%;
+        }
+
+        th[colspan="3"] {
+            width: 25%;
+        }
+        
+        /* 列宽调整手柄样式 */
+        .resize-handle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 5px;
+            cursor: col-resize;
+            z-index: 3;
+        }
+        
+        .resize-handle:hover, .resize-handle.active {
+            background-color: #1890ff;
+        }
+        
+        /* 表头与调整手柄样式 */
+        th {
+            position: relative;
+        }
+
+        @media screen and (max-width: 1400px) {
+            .page-container {
+                width: 80%;
+            }
+        }
+
+        @media screen and (max-width: 1200px) {
+            .page-container {
+                width: 90%;
+            }
+        }
+
+        @media screen and (max-width: 768px) {
+            .page-container {
+                width: 95%;
+                padding: 10px;
+            }
+            body {
+                margin: 0;
+            }
+            h1 {
+                font-size: 20px;
+                margin-bottom: 15px;
+            }
+            .table-container {
+                margin-bottom: 10px;
+            }
+            th, td {
+                padding: 4px 2px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+            <h1 style="margin: 0; margin-right: 10px;">性能测试对比报告</h1>
+            <div id="compareTime" class="compare-time" style="margin: 0;"></div>
+            <div style="margin-left: auto;">
+                <button id="exportPdfBtn" style="padding: 6px 14px; background-color: #1890ff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">导出PDF</button>
+            </div>
+        </div>
+        <div class="table-container">
+            <table id="reportTable">
+                <thead>
+                    <tr>
+                        <th rowspan="2" style="width: 200px; background-color: #e6f0ff;">接口名称</th>
+                        <th colspan="3" class="section-header">响应时间(ms)</th>
+                        <th colspan="3" class="section-header">吞吐量(req/s)</th>
+                        <th colspan="3" class="section-header">错误数</th>
+                    </tr>
+                    <tr>
+                        <th class="sortable" data-sort="meanResTime_A">上期值</th>
+                        <th class="sortable" data-sort="meanResTime_B">本期值</th>
+                        <th class="sortable" data-sort="meanResTime_pct">对比结果</th>
+                        <th class="sortable" data-sort="throughput_A">上期值</th>
+                        <th class="sortable" data-sort="throughput_B">本期值</th>
+                        <th class="sortable" data-sort="throughput_pct">对比结果</th>
+                        <th class="sortable" data-sort="errorCount_A">上期值</th>
+                        <th class="sortable" data-sort="errorCount_B">本期值</th>
+                        <th class="sortable" data-sort="error_pct">对比结果</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="script.js"></script>
+    <script src="pdf-export.js"></script>
+    <script src="print-fallback.js"></script>
+</body>
+</html>
+<style>
+.compare-time {
+    color: #666;
+    font-size: 13px;
+}
+</style>
+<script>
+// 表格列宽调整功能
+document.addEventListener('DOMContentLoaded', function() {
+    // 等待表格加载完成
+    setTimeout(function() {
+        const table = document.getElementById('reportTable');
+        const headers = table.querySelectorAll('thead tr:last-child th');
+        
+        // 添加第一行标题的调整手柄
+        const firstRowHeaders = table.querySelectorAll('thead tr:first-child th');
+        const firstHeaderCells = Array.from(firstRowHeaders).filter(th => !th.hasAttribute('rowspan'));
+        
+        // 为每个表头添加一个调整手柄
+        firstHeaderCells.forEach(th => {
+            const handle = document.createElement('div');
+            handle.className = 'resize-handle';
+            th.appendChild(handle);
+            
+            // 监听拖动事件
+            handle.addEventListener('mousedown', startResize);
+        });
+        
+        // 为每个子表头添加一个调整手柄
+        headers.forEach(th => {
+            const handle = document.createElement('div');
+            handle.className = 'resize-handle';
+            th.appendChild(handle);
+            
+            // 监听拖动事件
+            handle.addEventListener('mousedown', startResize);
+        });
+        
+        let isResizing = false;
+        let currentTh = null;
+        let startX = 0;
+        let startWidth = 0;
+        let columnIndex = 0;
+        
+        // 开始调整宽度
+        function startResize(e) {
+            isResizing = true;
+            currentTh = e.target.parentElement;
+            startX = e.pageX;
+            startWidth = currentTh.offsetWidth;
+            
+            // 获取当前列的索引
+            const tr = currentTh.parentElement;
+            columnIndex = Array.from(tr.children).indexOf(currentTh);
+            
+            // 添加激活状态样式
+            e.target.classList.add('active');
+            
+            document.addEventListener('mousemove', resize);
+            document.addEventListener('mouseup', stopResize);
+            e.preventDefault();
+        }
+        
+        // 调整宽度
+        function resize(e) {
+            if (!isResizing) return;
+            
+            // 计算新宽度
+            const newWidth = startWidth + (e.pageX - startX);
+            if (newWidth < 30) return; // 限制最小宽度
+            
+            // 更新当前列宽
+            currentTh.style.width = newWidth + 'px';
+            
+            // 更新同一列的所有单元格宽度
+            updateColumnWidth(columnIndex, newWidth);
+        }
+        
+        // 停止调整
+        function stopResize() {
+            isResizing = false;
+            if (currentTh) {
+                const handles = document.querySelectorAll('.resize-handle');
+                handles.forEach(handle => handle.classList.remove('active'));
+                
+                document.removeEventListener('mousemove', resize);
+                document.removeEventListener('mouseup', stopResize);
+            }
+        }
+        
+        // 更新指定列的所有单元格宽度
+        function updateColumnWidth(colIndex, width) {
+            const rows = table.querySelectorAll('tr');
+            rows.forEach(row => {
+                // 处理合并列的情况
+                if (row.children.length > colIndex) {
+                    const cell = row.children[colIndex];
+                    if (!cell.hasAttribute('colspan')) {
+                        cell.style.width = width + 'px';
+                    }
+                }
+            });
+        }
+    }, 500); // 延迟执行，确保表格已经渲染
+});
+</script>

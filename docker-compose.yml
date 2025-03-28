@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  jmeter-report-diff:
+    build: 
+      context: .
+    container_name: jmeter-report-diff
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./uploads:/app/uploads
+    dns:
+      - 8.8.8.8
+      - 114.114.114.114
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Shanghai 

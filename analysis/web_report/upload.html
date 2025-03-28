@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>性能测试报告对比工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-width: 320px;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .page-container {
+            width: 70%;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+            font-weight: normal;
+            color: #333;
+        }
+        .upload-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+        .file-group {
+            width: 100%;
+            max-width: 500px;
+        }
+        .file-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+        .file-input-container {
+            position: relative;
+            width: 100%;
+            height: 40px;
+            border: 2px dashed #d9d9d9;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        .file-input-container:hover {
+            border-color: #1890ff;
+        }
+        .file-input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .file-placeholder {
+            color: #666;
+        }
+        .file-name {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+        .compare-button {
+            margin-top: 30px;
+            padding: 10px 24px;
+            font-size: 16px;
+            color: white;
+            background-color: #1890ff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .compare-button:hover {
+            background-color: #40a9ff;
+        }
+        .compare-button:disabled {
+            background-color: #d9d9d9;
+            cursor: not-allowed;
+        }
+        .error-message {
+            color: #ff4d4f;
+            font-size: 14px;
+            margin-top: 8px;
+            display: none;
+        }
+
+        @media screen and (max-width: 768px) {
+            .page-container {
+                width: 90%;
+                padding: 20px;
+                margin: 20px auto;
+            }
+            h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <h1>性能测试报告对比工具</h1>
+        <div class="upload-container">
+            <div class="file-group">
+                <label class="file-label">上期报告</label>
+                <div class="file-input-container" id="file1Container">
+                    <input type="file" class="file-input" id="file1" accept=".json">
+                    <span class="file-placeholder">点击或拖拽文件到此处</span>
+                </div>
+                <div class="file-name" id="file1Name"></div>
+                <div class="error-message" id="file1Error">请选择正确的JSON文件</div>
+            </div>
+            
+            <div class="file-group">
+                <label class="file-label">本期报告</label>
+                <div class="file-input-container" id="file2Container">
+                    <input type="file" class="file-input" id="file2" accept=".json">
+                    <span class="file-placeholder">点击或拖拽文件到此处</span>
+                </div>
+                <div class="file-name" id="file2Name"></div>
+                <div class="error-message" id="file2Error">请选择正确的JSON文件</div>
+            </div>
+
+            <button class="compare-button" id="compareButton" disabled>开始对比</button>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const file1Input = document.getElementById('file1');
+            const file2Input = document.getElementById('file2');
+            const file1Name = document.getElementById('file1Name');
+            const file2Name = document.getElementById('file2Name');
+            const compareButton = document.getElementById('compareButton');
+            const file1Error = document.getElementById('file1Error');
+            const file2Error = document.getElementById('file2Error');
+
+            function handleFileSelect(file, nameElement, errorElement) {
+                if (file) {
+                    nameElement.textContent = file.name;
+                    if (!file.name.endsWith('.json')) {
+                        errorElement.style.display = 'block';
+                        return false;
+                    }
+                    errorElement.style.display = 'none';
+                    return true;
+                }
+                return false;
+            }
+
+            function updateCompareButton() {
+                const file1Valid = file1Input.files.length > 0 && file1Input.files[0].name.endsWith('.json');
+                const file2Valid = file2Input.files.length > 0 && file2Input.files[0].name.endsWith('.json');
+                compareButton.disabled = !(file1Valid && file2Valid);
+            }
+
+            file1Input.addEventListener('change', function() {
+                handleFileSelect(this.files[0], file1Name, file1Error);
+                updateCompareButton();
+            });
+
+            file2Input.addEventListener('change', function() {
+                handleFileSelect(this.files[0], file2Name, file2Error);
+                updateCompareButton();
+            });
+
+            compareButton.addEventListener('click', async function() {
+                const formData = new FormData();
+                formData.append('file1', file1Input.files[0]);
+                formData.append('file2', file2Input.files[0]);
+
+                try {
+                    const response = await fetch('/compare', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.redirect) {
+                            window.location.href = result.redirect;
+                        } else {
+                            window.location.href = '/result.html';
+                        }
+                    } else {
+                        alert('文件上传失败，请重试');
+                    }
+                } catch (error) {
+                    alert('发生错误，请重试');
+                    console.error('Error:', error);
+                }
+            });
+        });
+    </script>
+</body>
+</html> 
